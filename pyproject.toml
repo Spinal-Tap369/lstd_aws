@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lstd-aws"
+version = "0.1.0"
+description = "End-to-end Binance BTC LSTD training and live inference orchestration on AWS"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Samuel V" }
+]
+dependencies = [
+  "numpy>=1.26,<3",
+  "pandas>=2.2,<3",
+  "requests>=2.32,<3",
+  "tqdm>=4.66,<5",
+  "torch>=2.2,<3"
+]
+
+[project.scripts]
+lstd-aws = "lstd_aws.__main__:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["lstd_aws*"]
