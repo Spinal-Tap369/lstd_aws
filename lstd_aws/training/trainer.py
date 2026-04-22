@@ -18,6 +18,7 @@ from lstd_core.model import LSTDNet
 
 from .config import FitTrainConfig
 from .data import TrainValLoaderBundle, build_train_val_loaders
+from .s3_artifacts import upload_training_outputs
 from .utils import ensure_dir, save_json, set_seed, choose_device, timestamp_tag
 
 
@@ -30,6 +31,7 @@ class LSTDFitTrainer:
     - splits raw data BEFORE feature engineering
     - fits train-only scalers explicitly
     - publishes a resumable artifact bundle for live inference
+    - can optionally upload the artifact bundle and summary files to S3
     """
 
     def __init__(self, cfg: FitTrainConfig):
@@ -63,6 +65,7 @@ class LSTDFitTrainer:
 
         self.best_ckpt_path = os.path.join(self.ckpt_dir, "checkpoint.pth")
         self.artifact_bundle_path = os.path.join(self.out_dir, self.cfg.runtime.artifact_bundle_name)
+        self.fit_summary_path = os.path.join(self.out_dir, "fit_summary.json")
 
     def _extract_pred_true(
         self,
@@ -270,6 +273,9 @@ class LSTDFitTrainer:
             "initial_live_state": deepcopy(self.bundle.initial_live_state),
             "split_paths": deepcopy(self.bundle.split_paths),
             "split_meta": deepcopy(self.bundle.split_meta),
+            "artifact_last_completed_open_time": self.bundle.artifact_last_completed_open_time,
+            "artifact_last_completed_date": self.bundle.artifact_last_completed_date,
+            "train_raw_last_open_time": self.bundle.train_raw_last_open_time,
             "best_monitor": best_monitor,
             "fit_history": history,
         }
@@ -348,7 +354,7 @@ class LSTDFitTrainer:
         artifact_bundle = self._build_artifact_bundle(best_state, best_monitor, history)
         torch.save(artifact_bundle, self.artifact_bundle_path)
 
-        summary = {
+        summary: Dict[str, Any] = {
             "run_id": self.run_id,
             "best_checkpoint": self.best_ckpt_path,
             "artifact_bundle_path": self.artifact_bundle_path,
@@ -363,7 +369,24 @@ class LSTDFitTrainer:
             "feature_config": asdict(self.cfg.feature_pipeline),
             "split_paths": self.bundle.split_paths,
             "split_meta": self.bundle.split_meta,
+            "artifact_last_completed_open_time": self.bundle.artifact_last_completed_open_time,
+            "artifact_last_completed_date": self.bundle.artifact_last_completed_date,
+            "train_raw_last_open_time": self.bundle.train_raw_last_open_time,
+            "s3_uploads": {},
         }
 
-        save_json(os.path.join(self.out_dir, "fit_summary.json"), summary)
+        save_json(self.fit_summary_path, summary)
+
+        if self.cfg.s3_artifacts.enabled:
+            summary["s3_uploads"] = upload_training_outputs(
+                s3_cfg=self.cfg.s3_artifacts,
+                experiment_name=self.cfg.runtime.experiment_name,
+                run_id=self.run_id,
+                artifact_bundle_path=self.artifact_bundle_path,
+                best_checkpoint_path=self.best_ckpt_path,
+                fit_summary_path=self.fit_summary_path,
+            )
+            save_json(self.fit_summary_path, summary)
+
         return summary
+

@@ -53,8 +53,18 @@ class RuntimeConfig:
 
 
 @dataclass
+class S3ArtifactConfig:
+    enabled: bool = False
+    bucket: str = "my-lstd-data"
+    region: str = "eu-central-1"
+    prefix: str = "training-artifacts"
+    upload_best_checkpoint: bool = True
+    upload_fit_summary: bool = True
+
+
+@dataclass
 class FitTrainConfig:
-    # This is now the RAW historical csv, not a pre-engineered lstd csv.
+    # This is the RAW historical csv, not a pre-engineered lstd csv.
     root_path: str = "data"
     data_path: str = ""
 
@@ -64,4 +74,6 @@ class FitTrainConfig:
     export: LSTDExportConfig = field(default_factory=LSTDExportConfig)
     optim: OptimizerConfig = field(default_factory=OptimizerConfig)
     runtime: RuntimeConfig = field(default_factory=RuntimeConfig)
+    s3_artifacts: S3ArtifactConfig = field(default_factory=S3ArtifactConfig)
     patience: int = 5
+

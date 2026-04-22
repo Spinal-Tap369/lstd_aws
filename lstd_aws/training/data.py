@@ -1,5 +1,3 @@
-# training/data.py
-
 from __future__ import annotations
 
 import os
@@ -122,6 +120,9 @@ class TrainValLoaderBundle:
     split_paths: dict[str, str]
     split_meta: dict[str, Any]
     initial_live_state: dict[str, Any]
+    artifact_last_completed_open_time: Optional[int]
+    artifact_last_completed_date: Optional[str]
+    train_raw_last_open_time: Optional[int]
 
 
 @dataclass
@@ -257,7 +258,7 @@ def build_train_val_loaders(cfg: FitTrainConfig) -> TrainValLoaderBundle:
         batch_size=cfg.optim.batch_size,
         shuffle=True,
         num_workers=cfg.optim.num_workers,
-        drop_last=True,
+        drop_last=False,
         pin_memory=bool(cfg.optim.pin_memory),
     )
 
@@ -283,6 +284,8 @@ def build_train_val_loaders(cfg: FitTrainConfig) -> TrainValLoaderBundle:
     history_scaled_rows = warmup_scaled[-cfg.windows.seq_len:].tolist()
     history_dates = warmup_lstd_df["date"].iloc[-cfg.windows.seq_len:].astype(str).tolist()
     last_completed_open_time = int(warmup_feat_df["open_time"].iloc[-1]) if not warmup_feat_df.empty else None
+    last_completed_date = history_dates[-1] if history_dates else None
+    train_raw_last_open_time = int(split_frames.train_raw.iloc[-1]["open_time"]) if not split_frames.train_raw.empty else None
 
     initial_live_state = {
         "history_scaled_rows": history_scaled_rows,
@@ -309,6 +312,9 @@ def build_train_val_loaders(cfg: FitTrainConfig) -> TrainValLoaderBundle:
         split_paths=split_export["paths"],
         split_meta=split_export["meta"],
         initial_live_state=initial_live_state,
+        artifact_last_completed_open_time=last_completed_open_time,
+        artifact_last_completed_date=last_completed_date,
+        train_raw_last_open_time=train_raw_last_open_time,
     )
 
 
