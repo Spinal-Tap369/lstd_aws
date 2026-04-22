@@ -21,12 +21,40 @@ class ExecutionConfig:
     use_training_test_split_for_live: bool = True
     pipeline_summary_name: str = "pipeline_summary.json"
 
+
+@dataclass
+class LocalReplayConfig:
+    """
+    Single-machine validation harness.
+
+    Why this exists:
+    - service mode tests artifact handoff directly through LSTDLiveInferenceService
+    - worker mode tests the sqs-worker style behavior locally:
+      catch up the gap, optionally warm backlog, then only start prediction/adaptation
+
+    Important:
+    - skip_bars lets you simulate inference starting late by several bars/days
+    - initial_queue_backlog_bars lets you simulate the worker seeing a small backlog
+      already waiting in the queue before it starts doing real live forecasting
+    """
+
+    enabled: bool = False
+    mode: str = "worker"  # worker | service
+    skip_bars: int = 0
+    initial_queue_backlog_bars: int = 0
+    max_rows: int = 0
+    output_dir_name: str = "local_replay"
+    derived_live_csv_name: str = "derived_live_input.csv"
+    force_gap_fill_for_service: bool = True
+
+
 @dataclass
 class PipelineConfig:
     download: HistoricalDownloadConfig = field(default_factory=HistoricalDownloadConfig)
     train: FitTrainConfig = field(default_factory=FitTrainConfig)
     live: LiveInferenceConfig = field(default_factory=LiveInferenceConfig)
     execution: ExecutionConfig = field(default_factory=ExecutionConfig)
+    local_replay: LocalReplayConfig = field(default_factory=LocalReplayConfig)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -75,6 +103,15 @@ class PipelineConfig:
         cfg.train.windows.delay_fb = False
 
         # -------------------------------------------------
+        # Model
+        # -------------------------------------------------
+        cfg.train.model.mode = "feature"
+        cfg.train.model.long_conv_hidden = 640
+        cfg.train.model.short_mlp_hidden = 512
+        cfg.train.model.future_mlp_hidden = 512
+        cfg.train.model.lags = 1
+        cfg.train.model.prior_hidden_dim = 128
+        cfg.train.model.prior_num_hidden_layers = 3
         cfg.train.model.zc_kl_weight = 1.0
         cfg.train.model.zd_kl_weight = 1.0
         cfg.train.model.L1_weight = 0.0
@@ -163,6 +200,18 @@ class PipelineConfig:
         cfg.execution.live_mode = "online"
         cfg.execution.use_training_test_split_for_live = True
         cfg.execution.pipeline_summary_name = "pipeline_summary.json"
+
+        # -------------------------------------------------
+        # Local replay harness
+        # -------------------------------------------------
+        cfg.local_replay.enabled = False
+        cfg.local_replay.mode = "worker"
+        cfg.local_replay.skip_bars = 0
+        cfg.local_replay.initial_queue_backlog_bars = 0
+        cfg.local_replay.max_rows = 0
+        cfg.local_replay.output_dir_name = "local_replay"
+        cfg.local_replay.derived_live_csv_name = "derived_live_input.csv"
+        cfg.local_replay.force_gap_fill_for_service = True
 
         return cfg
 
