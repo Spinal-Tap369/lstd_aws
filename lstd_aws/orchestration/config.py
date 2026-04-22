@@ -91,9 +91,9 @@ class PipelineConfig:
         cfg.train.windows.seq_len = 17
         cfg.train.windows.label_len = 16
         cfg.train.windows.pred_len = 1
-        cfg.train.windows.train_ratio = 0.25
+        cfg.train.windows.train_ratio = 0.45
         cfg.train.windows.val_ratio = 0.05
-        cfg.train.windows.test_ratio = 0.70
+        cfg.train.windows.test_ratio = 0.50
         cfg.train.windows.features = "MS"
         cfg.train.windows.target = "close"
         cfg.train.windows.scale = True
