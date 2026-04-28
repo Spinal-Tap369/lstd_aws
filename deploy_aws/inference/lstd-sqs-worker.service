@@ -1,0 +1,5 @@
+[Unit] Description=LSTD Live Inference SQS Worker After=network-online.target Wants=network-online.target
+
+[Service] Type=simple User=ec2-user WorkingDirectory=/opt/lstd_inference/app EnvironmentFile=/opt/lstd_inference/lstd_sqs_worker.env ExecStart=/opt/lstd_inference-venv/bin/python -m lstd_aws.live_inference.sqs_worker Restart=always RestartSec=5 KillSignal=SIGINT TimeoutStopSec=30
+
+[Install] WantedBy=multi-user.target

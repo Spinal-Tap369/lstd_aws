@@ -1,0 +1,18 @@
+[Unit]
+Description=Binance WebSocket Collector
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/opt/pipeline
+EnvironmentFile=/opt/pipeline-env/ws_collector.env
+ExecStart=/opt/pipeline-venv/bin/python /opt/pipeline/ws_collector.py
+Restart=always
+RestartSec=5
+KillSignal=SIGINT
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

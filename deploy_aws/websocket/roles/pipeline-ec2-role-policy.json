@@ -1,0 +1,43 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "WriteRawArchive",
+            "Effect": "Allow",
+            "Action": "s3:PutObject",
+            "Resource": "arn:aws:s3:::my-lstd-data/raw/*"
+        },
+        {
+            "Sid": "ReadProcessedArchiveOptional",
+            "Effect": "Allow",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::my-lstd-data/processed/*"
+        },
+        {
+            "Sid": "SendRawMessages",
+            "Effect": "Allow",
+            "Action": "sqs:SendMessage",
+            "Resource": "arn:aws:sqs:eu-central-1:189599797847:raw-candles.fifo"
+        },
+        {
+            "Sid": "ConsumeProcessedMessages",
+            "Effect": "Allow",
+            "Action": [
+                "sqs:ReceiveMessage",
+                "sqs:DeleteMessage",
+                "sqs:ChangeMessageVisibility",
+                "sqs:GetQueueAttributes"
+            ],
+            "Resource": "arn:aws:sqs:eu-central-1:189599797847:processed-features.fifo"
+        },
+        {
+            "Sid": "ReadAndAdvanceState",
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:GetItem",
+                "dynamodb:UpdateItem"
+            ],
+            "Resource": "arn:aws:dynamodb:eu-central-1:189599797847:table/stream_state"
+        }
+    ]
+}

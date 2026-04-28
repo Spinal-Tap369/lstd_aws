@@ -1,0 +1,51 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "GetBucketLocation",
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetBucketLocation"
+            ],
+            "Resource": "arn:aws:s3:::my-lstd-data"
+        },
+        {
+            "Sid": "ListLatestModelPrefix",
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListBucket"
+            ],
+            "Resource": "arn:aws:s3:::my-lstd-data",
+            "Condition": {
+                "StringLike": {
+                    "s3:prefix": [
+                        "lstd-train/models/latest",
+                        "lstd-train/models/latest/*"
+                    ]
+                }
+            }
+        },
+        {
+            "Sid": "ReadLatestModelArtifacts",
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject"
+            ],
+            "Resource": [
+                "arn:aws:s3:::my-lstd-data/lstd-train/models/latest/*"
+            ]
+        },
+        {
+            "Sid": "ConsumeProcessedQueue",
+            "Effect": "Allow",
+            "Action": [
+                "sqs:GetQueueAttributes",
+                "sqs:GetQueueUrl",
+                "sqs:ReceiveMessage",
+                "sqs:DeleteMessage",
+                "sqs:ChangeMessageVisibility"
+            ],
+            "Resource": "arn:aws:sqs:eu-central-1:189599797847:processed-features.fifo"
+        }
+    ]
+}
